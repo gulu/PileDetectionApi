@@ -124,4 +124,112 @@ public class ProjectService : IProjectService
         return (int)await _fsql.Select<PileInfoEntity>()
             .Where(p => p.ProjectId == projectId && !p.IsDeleted).CountAsync();
     }
+
+    // ========== 权限管理 ==========
+
+    public async Task<ProjectPermissionResponse> GrantPermissionAsync(string clientId, Guid projectId)
+    {
+        // 检查是否已存在
+        var exists = await _fsql.Select<ProjectPermissionEntity>()
+            .Where(pp => pp.ClientId == clientId && pp.ProjectId == projectId)
+            .AnyAsync();
+        if (exists)
+            throw new DuplicateWaitObjectException($"权限已存在: ClientId={clientId}, ProjectId={projectId}");
+
+        var entity = new ProjectPermissionEntity
+        {
+            Id = Guid.NewGuid(),
+            ClientId = clientId,
+            ProjectId = projectId,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _fsql.Insert(entity).ExecuteAffrowsAsync();
+        _logger.LogInformation("授予项目权限: ClientId={ClientId}, ProjectId={ProjectId}", clientId, projectId);
+
+        var projectName = await _fsql.Select<ProjectInfoEntity>()
+            .Where(p => p.Id == projectId).FirstAsync(p => p.ProjectName);
+
+        return new ProjectPermissionResponse
+        {
+            Id = entity.Id,
+            ClientId = entity.ClientId,
+            ProjectId = entity.ProjectId,
+            ProjectName = projectName ?? "",
+            CreatedAt = entity.CreatedAt
+        };
+    }
+
+    public async Task<List<ProjectPermissionResponse>> BatchGrantPermissionAsync(string clientId, List<Guid> projectIds)
+    {
+        var results = new List<ProjectPermissionResponse>();
+        var existingIds = await _fsql.Select<ProjectPermissionEntity>()
+            .Where(pp => pp.ClientId == clientId && projectIds.Contains(pp.ProjectId))
+            .ToListAsync(pp => pp.ProjectId);
+        var existingSet = new HashSet<Guid>(existingIds);
+
+        foreach (var projectId in projectIds.Distinct())
+        {
+            if (existingSet.Contains(projectId)) continue;
+
+            var entity = new ProjectPermissionEntity
+            {
+                Id = Guid.NewGuid(),
+                ClientId = clientId,
+                ProjectId = projectId,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _fsql.Insert(entity).ExecuteAffrowsAsync();
+
+            var projectName = await _fsql.Select<ProjectInfoEntity>()
+                .Where(p => p.Id == projectId).FirstAsync(p => p.ProjectName);
+
+            results.Add(new ProjectPermissionResponse
+            {
+                Id = entity.Id,
+                ClientId = entity.ClientId,
+                ProjectId = entity.ProjectId,
+                ProjectName = projectName ?? "",
+                CreatedAt = entity.CreatedAt
+            });
+        }
+
+        _logger.LogInformation("批量授予项目权限: ClientId={ClientId}, Count={Count}", clientId, results.Count);
+        return results;
+    }
+
+    public async Task<List<ProjectPermissionResponse>> ListPermissionsAsync(string? clientId)
+    {
+        var query = _fsql.Select<ProjectPermissionEntity>();
+
+        if (!string.IsNullOrWhiteSpace(clientId))
+            query = query.Where(pp => pp.ClientId == clientId);
+
+        var items = await query.OrderByDescending(pp => pp.CreatedAt).ToListAsync();
+
+        // 批量获取关联的项目名称
+        var projectIds = items.Select(i => i.ProjectId).Distinct().ToList();
+        var projectNames = await _fsql.Select<ProjectInfoEntity>()
+            .Where(p => projectIds.Contains(p.Id))
+            .ToListAsync(p => new { p.Id, p.ProjectName });
+        var nameMap = projectNames.ToDictionary(n => n.Id, n => n.ProjectName);
+
+        return items.Select(item => new ProjectPermissionResponse
+        {
+            Id = item.Id,
+            ClientId = item.ClientId,
+            ProjectId = item.ProjectId,
+            ProjectName = nameMap.GetValueOrDefault(item.ProjectId) ?? "",
+            CreatedAt = item.CreatedAt
+        }).ToList();
+    }
+
+    public async Task<bool> RevokePermissionAsync(Guid permissionId)
+    {
+        var affected = await _fsql.Delete<ProjectPermissionEntity>()
+            .Where(pp => pp.Id == permissionId)
+            .ExecuteAffrowsAsync();
+        if (affected > 0)
+            _logger.LogInformation("撤销项目权限: Id={Id}", permissionId);
+        return affected > 0;
+    }
 }

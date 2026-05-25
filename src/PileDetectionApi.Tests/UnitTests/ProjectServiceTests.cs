@@ -236,6 +236,101 @@ public class ProjectServiceTests : IDisposable
         Assert.Equal(0, result.TotalCount);
     }
 
+    // ========== 权限管理测试 ==========
+
+    [Fact]
+    public async Task GrantPermissionAsync_ShouldCreatePermission()
+    {
+        var project = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "授权项目" });
+
+        var result = await _service.GrantPermissionAsync("client-1", project.Id);
+
+        Assert.NotNull(result);
+        Assert.Equal("client-1", result.ClientId);
+        Assert.Equal(project.Id, result.ProjectId);
+        Assert.Equal("授权项目", result.ProjectName);
+        Assert.NotEqual(Guid.Empty, result.Id);
+    }
+
+    [Fact]
+    public async Task GrantPermissionAsync_ShouldThrow_WhenDuplicate()
+    {
+        var project = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "重复授权" });
+        await _service.GrantPermissionAsync("client-1", project.Id);
+
+        await Assert.ThrowsAsync<DuplicateWaitObjectException>(() =>
+            _service.GrantPermissionAsync("client-1", project.Id));
+    }
+
+    [Fact]
+    public async Task BatchGrantPermissionAsync_ShouldCreateMultiple()
+    {
+        var p1 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "批量项目A" });
+        var p2 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "批量项目B" });
+        var p3 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "批量项目C" });
+
+        var results = await _service.BatchGrantPermissionAsync("client-1", new List<Guid> { p1.Id, p2.Id, p3.Id });
+
+        Assert.Equal(3, results.Count);
+        Assert.Contains(results, r => r.ProjectName == "批量项目A");
+        Assert.Contains(results, r => r.ProjectName == "批量项目B");
+        Assert.Contains(results, r => r.ProjectName == "批量项目C");
+        Assert.All(results, r => Assert.Equal("client-1", r.ClientId));
+    }
+
+    [Fact]
+    public async Task BatchGrantPermissionAsync_ShouldSkipDuplicates()
+    {
+        var p1 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "已授权项目" });
+        var p2 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "新项目" });
+        await _service.GrantPermissionAsync("client-1", p1.Id);
+
+        // 再次授予 p1（应跳过）+ p2
+        var results = await _service.BatchGrantPermissionAsync("client-1", new List<Guid> { p1.Id, p2.Id });
+
+        Assert.Single(results);
+        Assert.Equal("新项目", results[0].ProjectName);
+    }
+
+    [Fact]
+    public async Task ListPermissionsAsync_ShouldReturnAll()
+    {
+        var p1 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "列表项目A" });
+        var p2 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "列表项目B" });
+        await _service.GrantPermissionAsync("client-1", p1.Id);
+        await _service.GrantPermissionAsync("client-2", p2.Id);
+
+        // 不传 clientId - 返回全部
+        var all = await _service.ListPermissionsAsync(null);
+        Assert.Equal(2, all.Count);
+
+        // 按 clientId 过滤
+        var forClient1 = await _service.ListPermissionsAsync("client-1");
+        Assert.Single(forClient1);
+        Assert.Equal("列表项目A", forClient1[0].ProjectName);
+    }
+
+    [Fact]
+    public async Task RevokePermissionAsync_ShouldRemovePermission()
+    {
+        var project = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "待撤销项目" });
+        var granted = await _service.GrantPermissionAsync("client-1", project.Id);
+
+        var revoked = await _service.RevokePermissionAsync(granted.Id);
+        Assert.True(revoked);
+
+        // 确认权限已被撤销
+        var list = await _service.ListPermissionsAsync("client-1");
+        Assert.DoesNotContain(list, p => p.ProjectId == project.Id);
+    }
+
+    [Fact]
+    public async Task RevokePermissionAsync_ShouldReturnFalse_WhenNotExists()
+    {
+        var result = await _service.RevokePermissionAsync(Guid.NewGuid());
+        Assert.False(result);
+    }
+
     public void Dispose()
     {
         _fsql.Dispose();
