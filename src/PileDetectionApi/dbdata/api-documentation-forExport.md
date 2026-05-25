@@ -2,7 +2,7 @@
 
 > 第三方集成接口文档
 >
-> 版本：v1 | 更新日期：2026-05-12
+> 版本：v1 | 更新日期：2026-05-25
 
 ---
 
@@ -11,6 +11,7 @@
 1. [接口规范](#1-接口规范)
 2. [认证接入](#2-认证接入)
 3. [项目管理](#3-项目管理)
+   - 3.6 [查询当前账号有处理权限的项目列表](#36-查询当前账号有处理权限的项目列表)
 4. [基桩管理](#4-基桩管理)
 5. [剖面统计](#5-剖面统计)
 6. [测点数据](#6-测点数据)
@@ -37,7 +38,7 @@
 - **Content-Type**：`application/json; charset=utf-8`
 - **认证方式**：`Authorization: Bearer {jwt_token}`
 - **ID 类型**：所有主键和外键均为 **GUID 字符串**（如 `"a1b2c3d4-e5f6-7890-abcd-ef1234567890"`）
-- **时间格式**：ISO 8601（如 `2026-05-11T10:00:00Z`）
+- **时间格式**：`yyyy-MM-dd HH:mm:ss`（如 `2026-05-11 10:00:00`）
 - **分页参数**：通过 Request Body 传入 `page`（从 1 开始）、`pageSize`（默认 20，最大 100）
 
 ### 1.3 通用响应结构
@@ -50,7 +51,7 @@
   "message": "成功",
   "data": { ... },
   "errors": null,
-  "timestamp": "2026-05-11T10:00:00.0000000Z"
+  "timestamp": "2026-05-11 10:00:00"
 }
 ```
 
@@ -60,7 +61,7 @@
 | `message` | string | 提示信息 |
 | `data` | object | 业务数据 |
 | `errors` | object/null | 错误详情（失败时返回） |
-| `timestamp` | string | 服务器时间戳 |
+| `timestamp` | string | 服务器时间戳，格式 `yyyy-MM-dd HH:mm:ss` |
 
 ### 1.4 HTTP 状态码说明
 
@@ -78,16 +79,21 @@
 
 ## 2. 认证接入
 
-### 2.1 获取 API Key（先联系管理员）
+> 本系统使用 **clientId（用户ID）+ apiKey（密钥）** 的方式登录验证。
+> 第三方系统对接时，管理员会分配一个唯一的 **clientId**（用户账号）和对应的 **apiKey**（登录密码），与传统的"用户名 + 密码"登录模式一致。
 
-调用所有业务接口前，需先向系统管理员申请 API Key。管理员通过管理端接口生成 Key 后，会提供以下信息：
+### 2.1 获取账号信息（先联系管理员）
+
+调用所有业务接口前，需先向系统管理员申请接入账号。管理员通过管理端生成账号后，会提供以下信息：
 
 | 参数 | 示例 | 说明 |
 |------|------|------|
-| `clientId` | `client_20260511_abc12345` | 客户端唯一标识 |
-| `apiKey` | `pile_sk_xxxxxxxx...` | 用于换取 Token（仅创建时可见） |
+| `clientId`（用户ID） | `client_20260511_abc12345` | 客户端唯一标识，相当于"用户名" |
+| `apiKey`（登录密钥） | `pile_sk_xxxxxxxx...` | 登录密码（仅创建时可见，请妥善保管） |
 
-### 2.2 换取 JWT Token
+### 2.2 登录换取 JWT Token
+
+使用管理员分配的 `clientId`（用户ID）和 `apiKey`（登录密钥）进行身份验证，换取后续接口调用所需的 JWT Token。
 
 ```
 POST /api/v1/auth/token
@@ -109,7 +115,7 @@ POST /api/v1/auth/token
   "code": 200,
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ",
-    "expiresAt": "2026-05-13T10:00:00Z",
+    "expiresAt": "2026-05-13 10:00:00",
     "tokenType": "Bearer"
   }
 }
@@ -118,7 +124,7 @@ POST /api/v1/auth/token
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `token` | string | JWT Token（有效期内使用） |
-| `expiresAt` | string | 过期时间（默认 24 小时） |
+| `expiresAt` | string | 过期时间（默认 24 小时，格式 `yyyy-MM-dd HH:mm:ss`） |
 | `tokenType` | string | 固定 `Bearer` |
 
 ### 2.3 使用 Token 调用业务接口
@@ -172,7 +178,7 @@ POST /api/v1/projects
     "projectLocation": "浙江省温州市",
     "projectManager": "张三",
     "projectDesc": "桥梁基桩检测",
-    "createdAt": "2026-05-12T10:00:00Z",
+    "createdAt": "2026-05-12 10:00:00",
     "updatedAt": null
   }
 }
@@ -214,7 +220,7 @@ POST /api/v1/projects/list
         "projectLocation": "浙江省温州市",
         "projectManager": "张三",
         "projectDesc": "桥梁基桩检测",
-        "createdAt": "2026-05-12T10:00:00Z",
+        "createdAt": "2026-05-12 10:00:00",
         "updatedAt": null
       }
     ],
@@ -250,7 +256,7 @@ POST /api/v1/projects/{id}
     "projectManager": "张三",
     "projectDesc": "桥梁基桩检测",
     "pileCount": 5,
-    "createdAt": "2026-05-12T10:00:00Z"
+    "createdAt": "2026-05-12 10:00:00"
   }
 }
 ```
@@ -283,8 +289,8 @@ POST /api/v1/projects/{projectId}/update
     "projectLocation": "浙江省温州市鹿城区",
     "projectManager": "张三",
     "projectDesc": "桥梁基桩检测",
-    "createdAt": "2026-05-12T10:00:00Z",
-    "updatedAt": "2026-05-12T11:00:00Z"
+    "createdAt": "2026-05-12 10:00:00",
+    "updatedAt": "2026-05-12 11:00:00"
   }
 }
 ```
@@ -306,6 +312,57 @@ POST /api/v1/projects/{projectId}/delete
   "data": {}
 }
 ```
+
+### 3.6 查询当前账号有处理权限的项目列表
+
+> 根据登录账号（`clientId`）过滤，仅返回该账号被管理员授权可以处理的项目。
+
+```
+POST /api/v1/projects/permitted-list
+```
+
+**Request Body：**
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "keyword": "碗窑岭"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `page` | int | 否 | 页码（默认 1） |
+| `pageSize` | int | 否 | 每页条数（默认 20） |
+| `keyword` | string | 否 | 关键字搜索（按项目名称模糊匹配） |
+
+**Response：**
+
+```json
+{
+  "code": 200,
+  "data": {
+    "items": [
+      {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef123456789001",
+        "projectName": "碗窑岭大桥",
+        "projectNo": "PROJ-2026-001",
+        "projectLocation": "浙江省温州市",
+        "projectManager": "张三",
+        "projectDesc": "桥梁基桩检测",
+        "createdAt": "2026-05-12 10:00:00",
+        "updatedAt": null
+      }
+    ],
+    "page": 1,
+    "pageSize": 20,
+    "totalCount": 1
+  }
+}
+```
+
+> **说明：** 此接口会自动识别当前登录的账号，只返回该账号有处理权限的项目列表。未授权访问的项目不会出现在结果中。如需授权/管理权限，请联系系统管理员。
 
 ---
 
@@ -331,8 +388,8 @@ POST /api/v1/projects/{projectId}/piles
   "designLength": 11.7,
   "designDiameter": 2000,
   "designStrength": "C25",
-  "pourDate": "2026-03-15T00:00:00Z",
-  "testDate": "2026-03-18T00:00:00Z",
+  "pourDate": "2026-03-15 00:00:00",
+  "testDate": "2026-03-18 00:00:00",
   "testStandard": "JGJ 106-2014",
   "instrumentModel": "RSM-SY7",
   "instrumentSn": "SN2026001",
@@ -368,14 +425,14 @@ POST /api/v1/projects/{projectId}/piles
     "designLength": 11.7,
     "designDiameter": 2000,
     "designStrength": "C25",
-    "pourDate": "2026-03-15T00:00:00Z",
-    "testDate": "2026-03-18T00:00:00Z",
+    "pourDate": "2026-03-15 00:00:00",
+    "testDate": "2026-03-18 00:00:00",
     "testStandard": "JGJ 106-2014",
     "instrumentModel": "RSM-SY7",
     "instrumentSn": "SN2026001",
     "tester": "李四",
     "testerCertNo": "JC-2026-001",
-    "createdAt": "2026-05-12T10:00:00Z",
+    "createdAt": "2026-05-12 10:00:00",
     "updatedAt": null
   }
 }
@@ -415,7 +472,7 @@ POST /api/v1/projects/{projectId}/piles/list
         "designLength": 11.7,
         "designDiameter": 2000,
         "integrityCategory": 1,
-        "createdAt": "2026-05-12T10:00:00Z"
+        "createdAt": "2026-05-12 10:00:00"
       }
     ],
     "page": 1,
@@ -450,15 +507,15 @@ POST /api/v1/piles/{id}
     "designLength": 11.7,
     "designDiameter": 2000,
     "designStrength": "C25",
-    "pourDate": "2026-03-15T00:00:00Z",
-    "testDate": "2026-03-18T00:00:00Z",
+    "pourDate": "2026-03-15 00:00:00",
+    "testDate": "2026-03-18 00:00:00",
     "testStandard": "JGJ 106-2014",
     "instrumentModel": "RSM-SY7",
     "instrumentSn": "SN2026001",
     "tester": "李四",
     "testerCertNo": "JC-2026-001",
     "integrityCategory": 1,
-    "createdAt": "2026-05-12T10:00:00Z",
+    "createdAt": "2026-05-12 10:00:00",
     "updatedAt": null,
     "profileStats": [
       {
@@ -486,7 +543,7 @@ POST /api/v1/piles/{id}
       "id": "e5f6a7b8-c9d0-1234-efab-2345678901cd",
       "pileInfoId": "b2c3d4e5-f6a7-8901-bcde-f123456789012",
       "reportNo": "BG-2026-001",
-      "reportDate": "2026-05-11T00:00:00Z",
+      "reportDate": "2026-05-11 00:00:00",
       "integrityCategory": 1,
       "avgVelocity": 4.15,
       "criticalVelocity": 3.42,
@@ -528,7 +585,7 @@ POST /api/v1/piles/{id}/update
     "id": "b2c3d4e5-f6a7-8901-bcde-f123456789012",
     "pileName": "右11-复测",
     "integrityCategory": 1,
-    "updatedAt": "2026-05-12T11:00:00Z"
+    "updatedAt": "2026-05-12 11:00:00"
   }
 }
 ```
@@ -830,7 +887,7 @@ POST /api/v1/piles/{pileId}/report
 ```json
 {
   "reportNo": "BG-2026-001",
-  "reportDate": "2026-05-11T00:00:00Z",
+  "reportDate": "2026-05-11 00:00:00",
   "integrityCategory": 1,
   "avgVelocity": 4.15,
   "criticalVelocity": 3.42,
@@ -860,7 +917,7 @@ POST /api/v1/piles/{pileId}/report
     "id": "e5f6a7b8-c9d0-1234-efab-2345678901cd",
     "pileInfoId": "b2c3d4e5-f6a7-8901-bcde-f123456789012",
     "reportNo": "BG-2026-001",
-    "reportDate": "2026-05-11T00:00:00Z",
+    "reportDate": "2026-05-11 00:00:00",
     "integrityCategory": 1,
     "avgVelocity": 4.15,
     "criticalVelocity": 3.42,
@@ -904,7 +961,7 @@ POST /api/v1/projects/{projectId}/report
 ```json
 {
   "reportNo": "XM-BG-2026-001",
-  "reportDate": "2026-05-11T00:00:00Z",
+  "reportDate": "2026-05-11 00:00:00",
   "conclusion": "本次检测共1根桩，完整性合格。",
   "integritySummary": "Ⅰ类桩: 1根, Ⅱ类桩: 0根, Ⅲ类桩: 0根, Ⅳ类桩: 0根"
 }
@@ -919,7 +976,7 @@ POST /api/v1/projects/{projectId}/report
     "id": "f6a7b8c9-d0e1-2345-fabc-3456789012de",
     "projectId": "a1b2c3d4-e5f6-7890-abcd-ef123456789001",
     "reportNo": "XM-BG-2026-001",
-    "reportDate": "2026-05-11T00:00:00Z",
+    "reportDate": "2026-05-11 00:00:00",
     "conclusion": "本次检测共1根桩，完整性合格。",
     "integritySummary": "Ⅰ类桩: 1根, Ⅱ类桩: 0根, Ⅲ类桩: 0根, Ⅳ类桩: 0根"
   }
@@ -968,7 +1025,7 @@ POST /api/v1/piles/{id}/export
   "message": "成功",
   "data": { ... },
   "errors": null,
-  "timestamp": "2026-05-12T10:00:00.0000000Z"
+  "timestamp": "2026-05-12 10:00:00"
 }
 ```
 
@@ -983,7 +1040,7 @@ POST /api/v1/piles/{id}/export
     "pageSize": 20,
     "totalCount": 50
   },
-  "timestamp": "2026-05-12T10:00:00.0000000Z"
+  "timestamp": "2026-05-12 10:00:00"
 }
 ```
 
@@ -995,7 +1052,7 @@ POST /api/v1/piles/{id}/export
   "message": "API Key 无效或已过期",
   "data": null,
   "errors": { "detail": "API Key 无效" },
-  "timestamp": "2026-05-12T10:00:00.0000000Z"
+  "timestamp": "2026-05-12 10:00:00"
 }
 ```
 
@@ -1005,7 +1062,7 @@ POST /api/v1/piles/{id}/export
   "message": "服务器内部错误",
   "data": null,
   "errors": { "detail": "NullReferenceException: Object reference not set..." },
-  "timestamp": "2026-05-12T10:00:00.0000000Z"
+  "timestamp": "2026-05-12 10:00:00"
 }
 ```
 
@@ -1030,19 +1087,23 @@ POST /api/v1/piles/{id}/export
 ``` text
 第三方系统                    PileDetection API
     │                              │
-    │  1. 申请 API Key (管理)       │
+    │  1. 申请账号 (管理)           │
     │───── 联系管理员 →─────────────│
     │←──── 获取 clientId + apiKey ─│
     │                              │
-    │  2. 换取 Token (无需认证)     │
+    │  2. 登录换取 Token            │
     │──── POST /api/v1/auth/token ─│
     │←─── { token, expiresAt } ────│
     │                              │
-    │  3. 调用业务接口 (全部 POST)  │
+    │  3. 查询有权处理的项目         │
+    │──── POST /projects/permitted-list ─  Authorization: Bearer xxx
+    │←─── { items: [...] } ────────│
+    │                              │
+    │  4. 调用其他业务接口           │
     │──── POST /projects/list ─────│  Authorization: Bearer xxx
     │←─── { data: [...] } ────────│
     │                              │
-    │  4. Token 过期后重复步骤 2    │
+    │  5. Token 过期后重复步骤 2    │
     │                              │
 ```
 
