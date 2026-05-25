@@ -1,9 +1,12 @@
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PileDetectionApi.Configs;
+using PileDetectionApi.Converters;
 using PileDetectionApi.Data;
 using PileDetectionApi.Mappings;
 using PileDetectionApi.Middleware;
@@ -95,6 +98,13 @@ builder.Services.AddFluentValidationAutoValidation()
 
 // ===== Controllers + Swagger =====
 builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new CustomDateTimeConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableDateTimeConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    })
     .ConfigureApiBehaviorOptions(options =>
     {
         options.SuppressModelStateInvalidFilter = false;
