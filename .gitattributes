@@ -1,0 +1,32 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# C# source files
+*.cs text=auto diff=csharp
+
+# Visual Studio solution/project files
+*.sln text=auto
+*.csproj text=auto
+
+# Config files
+*.json text=auto
+*.config text=auto
+
+# Bat files
+*.bat text=auto eol=crlf
+
+# Markdown
+*.md text=auto diff=markdown
+
+# SQL
+*.sql text=auto
+
+# Binary files - should remain as-is
+*.dll binary
+*.exe binary
+*.pdb binary
+*.png binary
+*.jpg binary
+*.7z binary
+*.db binary
+*.xlsx binary
