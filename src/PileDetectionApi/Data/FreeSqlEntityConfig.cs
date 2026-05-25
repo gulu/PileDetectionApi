@@ -147,5 +147,16 @@ public static class FreeSqlEntityConfig
             eb.Property(p => p.ProjectId).HasColumnName("project_id");
             eb.Property(p => p.CreatedAt).HasColumnName("created_at");
         });
+
+        // ===== MeasurementAuditLogEntity → measurement_audit_log =====
+        fsql.CodeFirst.Entity<MeasurementAuditLogEntity>(eb =>
+        {
+            eb.Property(p => p.MeasurementId).HasColumnName("measurement_id");
+            eb.Property(p => p.OperationType).HasColumnName("operation_type");
+            eb.Property(p => p.ClientId).HasColumnName("client_id");
+            eb.Property(p => p.PreviousData).HasColumnName("previous_data");
+            eb.Property(p => p.NewData).HasColumnName("new_data");
+            eb.Property(p => p.CreatedAt).HasColumnName("created_at");
+        });
     }
 }

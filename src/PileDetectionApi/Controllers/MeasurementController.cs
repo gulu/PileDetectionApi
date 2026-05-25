@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PileDetectionApi.DTOs.Request;
@@ -23,7 +24,8 @@ public class MeasurementController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<MeasurementResponse>>), 201)]
     public async Task<IActionResult> CreateBatch(Guid pileId, [FromBody] List<CreateMeasurementRequest> requests)
     {
-        var result = await _measurementService.CreateBatchAsync(pileId, requests);
+        var clientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+        var result = await _measurementService.CreateBatchAsync(pileId, requests, clientId);
         return Created("", ApiResponse<List<MeasurementResponse>>.Created(result));
     }
 
@@ -50,7 +52,8 @@ public class MeasurementController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<MeasurementResponse>), 200)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMeasurementRequest request)
     {
-        var result = await _measurementService.UpdateAsync(id, request);
+        var clientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+        var result = await _measurementService.UpdateAsync(id, request, clientId);
         return Ok(ApiResponse<MeasurementResponse>.Ok(result));
     }
 
@@ -59,7 +62,8 @@ public class MeasurementController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var success = await _measurementService.DeleteAsync(id);
+        var clientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+        var success = await _measurementService.DeleteAsync(id, clientId);
         if (!success)
             return NotFound(ApiResponse<object>.Fail(404, "测点数据不存在"));
         return Ok(ApiResponse<object>.Ok(new { }, "删除成功"));
