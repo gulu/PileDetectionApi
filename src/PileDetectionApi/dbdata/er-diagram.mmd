@@ -1,0 +1,117 @@
+erDiagram
+    project_info ||--o{ pile_info : "has"
+    project_info ||--o| project_report : "has"
+    pile_info ||--o{ profile_stat : "has"
+    pile_info ||--o{ measurement_data : "has"
+    pile_info ||--o| pile_report : "has"
+
+    project_info {
+        guid id PK
+        string project_name "not null"
+        string project_no
+        string project_location
+        string project_manager
+        string project_desc
+        bool is_deleted
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    pile_info {
+        guid id PK
+        guid project_id FK
+        string pile_name "not null"
+        double design_length
+        int design_diameter
+        string design_strength
+        datetime pour_date
+        datetime test_date
+        string test_standard
+        string instrument_model
+        string instrument_sn
+        string certification_no
+        string tester
+        string tester_cert_no
+        int integrity_category
+        bool is_deleted
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    profile_stat {
+        guid id PK
+        guid pile_info_id FK
+        string profile "not null"
+        double distance
+        double max_velocity
+        double min_velocity
+        double avg_velocity
+        double std_velocity
+        double cv_velocity
+        double critical_velocity
+        double max_amplitude
+        double min_amplitude
+        double avg_amplitude
+        double std_amplitude
+        double cv_amplitude
+        double critical_amplitude
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    measurement_data {
+        guid id PK
+        guid pile_info_id FK
+        string profile "not null"
+        double depth
+        double sound_velocity
+        double amplitude
+        double sound_time
+        double psd
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    pile_report {
+        guid id PK
+        guid pile_info_id FK
+        string report_no
+        datetime report_date
+        int integrity_category
+        double avg_velocity
+        double critical_velocity
+        double avg_amplitude
+        double critical_amplitude
+        string conclusion
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    project_report {
+        guid id PK
+        guid project_id FK
+        string report_no
+        datetime report_date
+        string conclusion
+        string integrity_summary
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    api_log {
+        guid id PK
+        string endpoint
+        string http_method
+        string request_body
+        int response_code
+        string response_body
+        string client_ip
+        long duration_ms
+        datetime created_at
+    }

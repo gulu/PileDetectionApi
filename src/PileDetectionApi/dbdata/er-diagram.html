@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PileDetection 数据库 ER 图</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Microsoft YaHei", sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
+  .container { max-width: 1000px; margin: 0 auto; }
+  .header { text-align: center; padding: 20px 0; }
+  .header h1 { font-size: 22px; font-weight: 600; color: #1a1a2e; }
+  .header p { font-size: 13px; color: #666; margin-top: 4px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 24px; margin-top: 16px; }
+  .legend { display: flex; gap: 24px; justify-content: center; padding: 12px 0; font-size: 13px; color: #555; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend .line-1n { display: inline-block; width: 30px; height: 0; border-top: 2px solid #888; position: relative; }
+  .legend .line-1n::before { content: "o"; position: absolute; right: -6px; top: -7px; font-size: 12px; }
+  .legend .line-11 { display: inline-block; width: 30px; height: 0; border-top: 2px solid #888; }
+  .mermaid-wrap { overflow-x: auto; }
+  .footer { text-align: center; padding: 16px; font-size: 12px; color: #999; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>PileDetection 数据库 ER 图</h1>
+    <p>超声基桩检测数据系统 — 共 7 个实体，5 个关系</p>
+  </div>
+  <div class="legend">
+    <span><span class="line-1n"></span> 1:N (一对多)</span>
+    <span><span class="line-11"></span> 1:1 (一对一)</span>
+  </div>
+  <div class="card">
+    <div class="mermaid-wrap">
+      <pre class="mermaid">
+erDiagram
+    project_info ||--o{ pile_info : "has"
+    project_info ||--o| project_report : "has"
+    pile_info ||--o{ profile_stat : "has"
+    pile_info ||--o{ measurement_data : "has"
+    pile_info ||--o| pile_report : "has"
+
+    project_info {
+        guid id PK
+        string project_name "not null"
+        string project_no
+        string project_location
+        string project_manager
+        string project_desc
+        bool is_deleted
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    pile_info {
+        guid id PK
+        guid project_id FK
+        string pile_name "not null"
+        double design_length
+        int design_diameter
+        string design_strength
+        datetime pour_date
+        datetime test_date
+        string test_standard
+        string instrument_model
+        string instrument_sn
+        string certification_no
+        string tester
+        string tester_cert_no
+        int integrity_category
+        bool is_deleted
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    profile_stat {
+        guid id PK
+        guid pile_info_id FK
+        string profile "not null"
+        double distance
+        double max_velocity
+        double min_velocity
+        double avg_velocity
+        double std_velocity
+        double cv_velocity
+        double critical_velocity
+        double max_amplitude
+        double min_amplitude
+        double avg_amplitude
+        double std_amplitude
+        double cv_amplitude
+        double critical_amplitude
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    measurement_data {
+        guid id PK
+        guid pile_info_id FK
+        string profile "not null"
+        double depth
+        double sound_velocity
+        double amplitude
+        double sound_time
+        double psd
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    pile_report {
+        guid id PK
+        guid pile_info_id FK
+        string report_no
+        datetime report_date
+        int integrity_category
+        double avg_velocity
+        double critical_velocity
+        double avg_amplitude
+        double critical_amplitude
+        string conclusion
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    project_report {
+        guid id PK
+        guid project_id FK
+        string report_no
+        datetime report_date
+        string conclusion
+        string integrity_summary
+        datetime created_at
+        datetime updated_at
+        string api_version
+    }
+
+    api_log {
+        guid id PK
+        string endpoint
+        string http_method
+        string request_body
+        int response_code
+        string response_body
+        string client_ip
+        long duration_ms
+        datetime created_at
+    }
+      </pre>
+    </div>
+  </div>
+  <div class="footer">
+    数据库文件: dbdata/pile.db | 生成时间: 2026-05-11
+  </div>
+</div>
+<script>mermaid.initialize({startOnLoad:true,theme:'base',themeVariables:{fontFamily:'-apple-system, Microsoft YaHei, sans-serif',primaryColor:'#E6F1FB',primaryBorderColor:'#185FA5',primaryTextColor:'#0C447C',lineColor:'#888780',secondaryColor:'#F1EFE8',tertiaryColor:'#D3D1C7'}});</script>
+</body>
+</html>
