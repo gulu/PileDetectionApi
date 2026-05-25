@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PileDetectionApi.DTOs.Request;
@@ -35,6 +36,19 @@ public class ProjectController : ControllerBase
     public async Task<IActionResult> GetPaged([FromBody] PagedQueryRequest request)
     {
         var result = await _projectService.GetPagedAsync(request.Page, request.PageSize, request.Keyword);
+        return Ok(ApiResponse<PagedResponse<ProjectResponse>>.Ok(result));
+    }
+
+    /// <summary>查询当前账号有处理权限的项目列表</summary>
+    [HttpPost("permitted-list")]
+    [ProducesResponseType(typeof(ApiResponse<PagedResponse<ProjectResponse>>), 200)]
+    public async Task<IActionResult> GetPermittedPaged([FromBody] PagedQueryRequest request)
+    {
+        var clientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(clientId))
+            return Unauthorized(ApiResponse<object>.Fail(401, "无法识别当前登录账号"));
+
+        var result = await _projectService.GetPermittedPagedAsync(clientId, request.Page, request.PageSize, request.Keyword);
         return Ok(ApiResponse<PagedResponse<ProjectResponse>>.Ok(result));
     }
 

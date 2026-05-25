@@ -80,7 +80,7 @@ public class AdminAuthService : IAdminAuthService
             };
         }
         catch (Exception ex) {
-            _logger.LogInformation("Token 已签发: clientId={ClientId}, 有效期至 {ExpiresAt}", clientId, expiresAt);
+            _logger.LogError(ex, "Token 签发失败: clientId={ClientId}", clientId);
             return null;
         }
     }

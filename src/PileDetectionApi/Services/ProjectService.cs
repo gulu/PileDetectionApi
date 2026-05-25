@@ -72,6 +72,30 @@ public class ProjectService : IProjectService
         };
     }
 
+    public async Task<PagedResponse<ProjectResponse>> GetPermittedPagedAsync(string clientId, int page, int pageSize, string? keyword)
+    {
+        var query = _fsql.Select<ProjectInfoEntity>()
+            .Where(p => !p.IsDeleted)
+            .Where(p => _fsql.Select<ProjectPermissionEntity>()
+                .Where(pp => pp.ClientId == clientId && pp.ProjectId == p.Id)
+                .Any());
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+            query = query.Where(p => p.ProjectName.Contains(keyword));
+
+        var total = await query.CountAsync();
+        var items = await query.OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize).Limit(pageSize).ToListAsync();
+
+        _logger.LogInformation("查询客户端权限项目列表: ClientId={ClientId}, Total={Total}, Page={Page}", clientId, total, page);
+
+        return new PagedResponse<ProjectResponse>
+        {
+            Items = _mapper.Map<List<ProjectResponse>>(items),
+            Page = page, PageSize = pageSize, TotalCount = (int)total
+        };
+    }
+
     public async Task<ProjectResponse> UpdateAsync(Guid id, UpdateProjectRequest request)
     {
         var entity = await _fsql.Select<ProjectInfoEntity>().Where(p => p.Id == id).FirstAsync();

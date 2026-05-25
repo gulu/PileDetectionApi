@@ -33,7 +33,7 @@ public class ProjectServiceTests : IDisposable
             typeof(ProjectInfoEntity), typeof(PileInfoEntity),
             typeof(ProfileStatEntity), typeof(MeasurementDataEntity),
             typeof(PileReportEntity), typeof(ProjectReportEntity),
-            typeof(ApiLogEntity));
+            typeof(ApiLogEntity), typeof(ProjectPermissionEntity));
 
         // AutoMapper
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
@@ -122,6 +122,118 @@ public class ProjectServiceTests : IDisposable
         // 带关键字
         var filtered = await _service.GetPagedAsync(1, 10, "项目1");
         Assert.Single(filtered.Items);
+    }
+
+    // ========== 权限查询测试 ==========
+
+    [Fact]
+    public async Task GetPermittedPagedAsync_ShouldReturnEmpty_WhenNoPermission()
+    {
+        // 创建一个项目但不插入任何权限记录
+        var project = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "无权限项目" });
+
+        var result = await _service.GetPermittedPagedAsync("client-1", 1, 20, null);
+
+        Assert.Empty(result.Items);
+        Assert.Equal(0, result.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetPermittedPagedAsync_ShouldReturnOnlyPermittedProjects()
+    {
+        // 创建 3 个项目
+        var p1 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "项目A" });
+        var p2 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "项目B" });
+        var p3 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "项目C" });
+
+        // 为 client-1 授予 p1 和 p3 的权限
+        _fsql.Insert(new ProjectPermissionEntity
+        {
+            Id = Guid.NewGuid(), ClientId = "client-1", ProjectId = p1.Id
+        }).ExecuteAffrows();
+        _fsql.Insert(new ProjectPermissionEntity
+        {
+            Id = Guid.NewGuid(), ClientId = "client-1", ProjectId = p3.Id
+        }).ExecuteAffrows();
+        // 为 client-2 授予 p2 的权限
+        _fsql.Insert(new ProjectPermissionEntity
+        {
+            Id = Guid.NewGuid(), ClientId = "client-2", ProjectId = p2.Id
+        }).ExecuteAffrows();
+
+        // client-1 应看到项目A和项目C
+        var result = await _service.GetPermittedPagedAsync("client-1", 1, 20, null);
+
+        Assert.Equal(2, result.TotalCount);
+        Assert.Contains(result.Items, i => i.ProjectName == "项目A");
+        Assert.Contains(result.Items, i => i.ProjectName == "项目C");
+        Assert.DoesNotContain(result.Items, i => i.ProjectName == "项目B");
+    }
+
+    [Fact]
+    public async Task GetPermittedPagedAsync_ShouldRespectPagination()
+    {
+        // 创建 4 个项目，都授权给 client-1
+        for (int i = 1; i <= 4; i++)
+        {
+            var p = await _service.CreateAsync(new CreateProjectRequest { ProjectName = $"分页项目{i}" });
+            _fsql.Insert(new ProjectPermissionEntity
+            {
+                Id = Guid.NewGuid(), ClientId = "client-1", ProjectId = p.Id
+            }).ExecuteAffrows();
+        }
+
+        // 第1页，每页2条
+        var page1 = await _service.GetPermittedPagedAsync("client-1", 1, 2, null);
+        Assert.Equal(4, page1.TotalCount);
+        Assert.Equal(2, page1.Items.Count);
+
+        // 第2页，每页2条
+        var page2 = await _service.GetPermittedPagedAsync("client-1", 2, 2, null);
+        Assert.Equal(4, page2.TotalCount);
+        Assert.Equal(2, page2.Items.Count);
+
+        // 验证两页数据不重复（按创建时间倒序）
+        Assert.NotEqual(page1.Items[0].Id, page2.Items[0].Id);
+    }
+
+    [Fact]
+    public async Task GetPermittedPagedAsync_ShouldSupportKeywordFilter()
+    {
+        // 创建项目并授权
+        var p1 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "国道大桥" });
+        var p2 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "省道大桥" });
+        var p3 = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "码头工程" });
+
+        foreach (var p in new[] { p1, p2, p3 })
+        {
+            _fsql.Insert(new ProjectPermissionEntity
+            {
+                Id = Guid.NewGuid(), ClientId = "client-1", ProjectId = p.Id
+            }).ExecuteAffrows();
+        }
+
+        // 按关键字 "大桥" 过滤
+        var result = await _service.GetPermittedPagedAsync("client-1", 1, 20, "大桥");
+
+        Assert.Equal(2, result.TotalCount);
+        Assert.Contains(result.Items, i => i.ProjectName == "国道大桥");
+        Assert.Contains(result.Items, i => i.ProjectName == "省道大桥");
+    }
+
+    [Fact]
+    public async Task GetPermittedPagedAsync_ShouldReturnEmpty_WhenKeywordNoMatch()
+    {
+        var p = await _service.CreateAsync(new CreateProjectRequest { ProjectName = "匹配项目" });
+        _fsql.Insert(new ProjectPermissionEntity
+        {
+            Id = Guid.NewGuid(), ClientId = "client-1", ProjectId = p.Id
+        }).ExecuteAffrows();
+
+        var result = await _service.GetPermittedPagedAsync("client-1", 1, 20, "不存在的关键字");
+
+        Assert.Empty(result.Items);
+        Assert.Equal(0, result.TotalCount);
     }
 
     public void Dispose()

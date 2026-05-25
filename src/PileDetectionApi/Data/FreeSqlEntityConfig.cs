@@ -139,5 +139,13 @@ public static class FreeSqlEntityConfig
             eb.Property(p => p.CreatedAt).HasColumnName("created_at");
             eb.Property(p => p.UpdatedAt).HasColumnName("updated_at");
         });
+
+        // ===== ProjectPermissionEntity → project_permission =====
+        fsql.CodeFirst.Entity<ProjectPermissionEntity>(eb =>
+        {
+            eb.Property(p => p.ClientId).HasColumnName("client_id");
+            eb.Property(p => p.ProjectId).HasColumnName("project_id");
+            eb.Property(p => p.CreatedAt).HasColumnName("created_at");
+        });
     }
 }

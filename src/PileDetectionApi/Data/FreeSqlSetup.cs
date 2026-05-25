@@ -37,7 +37,8 @@ public static class FreeSqlSetup
             typeof(PileReportEntity),
             typeof(ProjectReportEntity),
             typeof(ApiLogEntity),
-            typeof(ApiKeyEntity)
+            typeof(ApiKeyEntity),
+            typeof(ProjectPermissionEntity)
         );
 
         // 首次启动时创建默认 API Key（仅在 api_key 表为空时）
