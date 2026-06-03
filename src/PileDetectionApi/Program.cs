@@ -164,7 +164,8 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseCors("AllowAll");
 
-if (app.Environment.IsDevelopment())
+
+if (app.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -180,6 +181,7 @@ app.MapGet("/", context =>
     context.Response.Redirect("/swagger");
     return Task.CompletedTask;
 });
+
 
 Log.Information("PileDetectionApi 启动完成，数据库类型: {DbType}", dbConfig.Provider);
 Log.Information("Swagger UI: http://localhost:5000/swagger");

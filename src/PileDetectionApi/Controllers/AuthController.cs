@@ -16,6 +16,15 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    [HttpPost("tokenByUserid")]
+    [ProducesResponseType(typeof(ApiResponse<AuthTokenResponse>), 200)]
+    public async Task<IActionResult> tokenByUserid([FromBody] AuthTokenRequest request)
+    {
+        var result = await _authService.GenerateTokenByUserIdNameAsync( request.ClientId,request.ClientName);
+        return Ok(ApiResponse<AuthTokenResponse>.Ok(result));
+    }
+
+
     /// <summary>获取 JWT Token（无需鉴权）</summary>
     [HttpPost("token")]
     [ProducesResponseType(typeof(ApiResponse<AuthTokenResponse>), 200)]

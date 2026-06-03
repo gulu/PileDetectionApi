@@ -2,7 +2,7 @@
 
 > 基桩超声波透射检测数据采集接口平台 — 第三方集成接口文档
 >
-> 版本：v1 | 更新日期：2026-05-12
+> 版本：v1.1 | 更新日期：2026-05-12
 
 ---
 
@@ -27,8 +27,11 @@
 
 | 环境 | 地址 |
 |------|------|
-| 开发环境 | `http://localhost:5000` |
-| 生产环境 | 由部署方提供 |
+| 测试环境 | `http://121.199.16.6:3007` |
+| clientId | client_20260518_5ef0c298 |
+| apiKey | pile_sk_--8tZnckCaZ3en0S-7ZrYjEfqtU3WW_Z_F1hhk2_E36hMYFGSTtKSFc55qAYwOBa |
+| **projectId** | 6b5e01fc-93bf-4375-ae66-dc249ba8bd2c |
+| **projectName** | 智博联数据同步测试 |
 
 ### 1.2 通用约定
 
@@ -90,15 +93,16 @@
 ### 2.2 换取 JWT Token
 
 ```
-POST /api/v1/auth/token
+POST /api/v1/auth/tokenByUserid
 ```
 
 **Request Body：**
 
 ```json
 {
-  "apiKey": "pile_sk_xxxxxxxxxxxxxxxxxxxx",
-  "clientId": "client_20260511_abc12345"
+  "apiKey": "",
+  "clientId": "ZBL",
+  "clientName": "智博联"
 }
 ```
 

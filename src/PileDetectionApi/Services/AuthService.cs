@@ -51,8 +51,7 @@ public class AuthService : IAuthService
             var validKey = await _fsql.Select<ApiKeyEntity>()
                 .Where(k => k.ClientId == clientId
                          && k.ClientName == clientName
-                         && k.Status == 1
-                         && (k.ExpiresAt == null || k.ExpiresAt > DateTime.UtcNow))
+                         && k.Status == 1)
                 .AnyAsync();
 
             if (!validKey)

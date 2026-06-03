@@ -30,6 +30,19 @@ public class AdminAuthController : ControllerBase
         var result = await _adminAuth.CreateApiKeyAsync(request.ClientName, request.ExpireDays);
         return Ok(ApiResponse<ApiKeyCreatedResponse>.Ok(result));
     }
+    [HttpPost("api-keysinfo")]
+    [ProducesResponseType(typeof(ApiResponse<List<ApiKeyListResponse>>), 200)]
+
+    public async Task<IActionResult> CreateApiInfoAsync(
+        [FromHeader(Name = "X-Master-Key")] string masterKey,
+        [FromBody] CreateApiKeyRequest request)
+    {
+        if (!_adminAuth.ValidateMasterKey(masterKey))
+            return Unauthorized(ApiResponse<object>.Fail(401, "Master Key 无效"));
+
+        var result = await _adminAuth.CreateApiInfoAsync(request.ClientId, request.ClientName, request.ExpireDays);
+        return Ok(ApiResponse<ApiKeyCreatedResponse>.Ok(result));
+    }
 
     /// <summary>列出所有 API Key</summary>
     [HttpPost("api-keys/list")]

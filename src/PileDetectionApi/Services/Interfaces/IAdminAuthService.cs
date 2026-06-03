@@ -6,6 +6,8 @@ public interface IAdminAuthService
 {
     /// <summary>验证管理员主密钥</summary>
     bool ValidateMasterKey(string masterKey);
+
+    Task<ApiKeyCreatedResponse> CreateApiInfoAsync(string clientId,string clientName, int expireDays);
     /// <summary>生成新的 API Key</summary>
     Task<ApiKeyCreatedResponse> CreateApiKeyAsync(string clientName, int expireDays);
     /// <summary>列出所有 API Key</summary>
