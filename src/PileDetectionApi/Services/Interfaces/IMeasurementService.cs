@@ -10,4 +10,7 @@ public interface IMeasurementService
     Task<List<MeasurementResponse>> GetByProfileAsync(Guid pileInfoId, string profile);
     Task<MeasurementResponse> UpdateAsync(Guid id, UpdateMeasurementRequest request, string clientId);
     Task<bool> DeleteAsync(Guid id, string clientId);
+
+    /// <summary>获取单条测点的原始波形矩阵数据（可能为 null）</summary>
+    Task<MeasurementWaveformResponse?> GetWaveformAsync(Guid measurementDataId);
 }

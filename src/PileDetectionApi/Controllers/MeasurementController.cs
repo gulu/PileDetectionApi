@@ -68,4 +68,15 @@ public class MeasurementController : ControllerBase
             return NotFound(ApiResponse<object>.Fail(404, "测点数据不存在"));
         return Ok(ApiResponse<object>.Ok(new { }, "删除成功"));
     }
+
+    /// <summary>查询单条测点的原始波形矩阵数据</summary>
+    [HttpPost("{id}/waveform")]
+    [ProducesResponseType(typeof(ApiResponse<MeasurementWaveformResponse>), 200)]
+    public async Task<IActionResult> GetWaveform(Guid id)
+    {
+        var result = await _measurementService.GetWaveformAsync(id);
+        if (result == null)
+            return NotFound(ApiResponse<object>.Fail(404, "该测点无原始波形矩阵数据"));
+        return Ok(ApiResponse<MeasurementWaveformResponse>.Ok(result));
+    }
 }

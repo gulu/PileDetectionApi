@@ -2,7 +2,7 @@
 
 > 第三方集成接口文档
 >
-> 版本：v1 | 更新日期：2026-05-25
+> 版本：v1.2 | 更新日期：2026-06-03
 
 ---
 
@@ -11,10 +11,11 @@
 1. [接口规范](#1-接口规范)
 2. [认证接入](#2-认证接入)
 3. [项目管理](#3-项目管理)
-   - 3.6 [查询当前账号有处理权限的项目列表](#36-查询当前账号有处理权限的项目列表)
+   - 3.1[查询当前账号有处理权限的项目列表](#31-查询当前账号有处理权限的项目列表)
 4. [基桩管理](#4-基桩管理)
 5. [剖面统计](#5-剖面统计)
 6. [测点数据](#6-测点数据)
+   - 6.6[查询原始波形矩阵](#66-查询原始波形矩阵)
 7. [报告管理](#7-报告管理)
 8. [数据导出](#8-数据导出)
 9. [管理端 API Key 管理](#9-管理端-api-key-管理)
@@ -28,8 +29,9 @@
 
 | 环境 | 地址 |
 |------|------|
-| 开发环境 | `http://localhost:5000` |
-| 生产环境 | 由部署方提供 |
+| 测试环境 | `http://121.199.16.6:3007` |
+| clientId | ZBL |
+| clientName | 智博联 |
 
 ### 1.2 通用约定
 
@@ -79,8 +81,7 @@
 
 ## 2. 认证接入
 
-> 本系统使用 **clientId（用户ID）+ apiKey（密钥）** 的方式登录验证。
-> 第三方系统对接时，管理员会分配一个唯一的 **clientId**（用户账号）和对应的 **apiKey**（登录密码），与传统的"用户名 + 密码"登录模式一致。
+> 第三方系统对接时，管理员会分配一个唯一的 **clientId**（用户账号）和对应的 **clientName**（登录名）。
 
 ### 2.1 获取账号信息（先联系管理员）
 
@@ -88,23 +89,25 @@
 
 | 参数 | 示例 | 说明 |
 |------|------|------|
-| `clientId`（用户ID） | `client_20260511_abc12345` | 客户端唯一标识，相当于"用户名" |
-| `apiKey`（登录密钥） | `pile_sk_xxxxxxxx...` | 登录密码（仅创建时可见，请妥善保管） |
+| `clientId`（用户ID） | `ZBL` | 客户端唯一标识，相当于"用户ID" |
+| `clientName` | `智博联...` | 用户名 |
 
 ### 2.2 登录换取 JWT Token
 
-使用管理员分配的 `clientId`（用户ID）和 `apiKey`（登录密钥）进行身份验证，换取后续接口调用所需的 JWT Token。
+使用分配的 ClientId 和 clientName 后 ，换取后续接口调用所需的 JWT Token。
+
 
 ```
-POST /api/v1/auth/token
+POST /api/v1/auth/tokenByUserid
 ```
 
 **Request Body：**
 
 ```json
 {
-  "apiKey": "pile_sk_xxxxxxxxxxxxxxxxxxxx",
-  "clientId": "client_20260511_abc12345"
+  "apiKey": "string",
+  "clientId": "ZBL",
+  "clientName": "智博联"
 }
 ```
 
@@ -139,179 +142,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 
 ## 3. 项目管理
 
-### 3.1 创建项目
 
-```
-POST /api/v1/projects
-```
-
-**Request Body：**
-
-```json
-{
-  "projectName": "碗窑岭大桥",
-  "projectNo": "PROJ-2026-001",
-  "projectLocation": "浙江省温州市",
-  "projectManager": "张三",
-  "projectDesc": "桥梁基桩检测"
-}
-```
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `projectName` | string | 是 | 项目名称 |
-| `projectNo` | string | 否 | 项目编号 |
-| `projectLocation` | string | 否 | 项目地点 |
-| `projectManager` | string | 否 | 项目负责人 |
-| `projectDesc` | string | 否 | 项目描述 |
-
-**Response（201）：**
-
-```json
-{
-  "code": 201,
-  "message": "创建成功",
-  "data": {
-    "id": "a1b2c3d4-e5f6-7890-abcd-ef123456789001",
-    "projectName": "碗窑岭大桥",
-    "projectNo": "PROJ-2026-001",
-    "projectLocation": "浙江省温州市",
-    "projectManager": "张三",
-    "projectDesc": "桥梁基桩检测",
-    "createdAt": "2026-05-12 10:00:00",
-    "updatedAt": null
-  }
-}
-```
-
-### 3.2 查询项目列表
-
-```
-POST /api/v1/projects/list
-```
-
-**Request Body：**
-
-```json
-{
-  "page": 1,
-  "pageSize": 20,
-  "keyword": "碗窑岭"
-}
-```
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `page` | int | 否 | 页码（默认 1） |
-| `pageSize` | int | 否 | 每页条数（默认 20） |
-| `keyword` | string | 否 | 关键字搜索（按项目名称模糊匹配） |
-
-**Response：**
-
-```json
-{
-  "code": 200,
-  "data": {
-    "items": [
-      {
-        "id": "a1b2c3d4-e5f6-7890-abcd-ef123456789001",
-        "projectName": "碗窑岭大桥",
-        "projectNo": "PROJ-2026-001",
-        "projectLocation": "浙江省温州市",
-        "projectManager": "张三",
-        "projectDesc": "桥梁基桩检测",
-        "createdAt": "2026-05-12 10:00:00",
-        "updatedAt": null
-      }
-    ],
-    "page": 1,
-    "pageSize": 20,
-    "totalCount": 1
-  }
-}
-```
-
-### 3.3 查询项目详情
-
-```
-POST /api/v1/projects/{id}
-```
-
-**路径参数：**
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `id` | guid | 项目 ID（如 `a1b2c3d4-...-ef123456789001`） |
-
-**Response：**
-
-```json
-{
-  "code": 200,
-  "data": {
-    "id": "a1b2c3d4-e5f6-7890-abcd-ef123456789001",
-    "projectName": "碗窑岭大桥",
-    "projectNo": "PROJ-2026-001",
-    "projectLocation": "浙江省温州市",
-    "projectManager": "张三",
-    "projectDesc": "桥梁基桩检测",
-    "pileCount": 5,
-    "createdAt": "2026-05-12 10:00:00"
-  }
-}
-```
-
-### 3.4 更新项目
-
-```
-POST /api/v1/projects/{projectId}/update
-```
-
-**Request Body（所有字段可选，只传需要更新的）：**
-
-```json
-{
-  "projectName": "碗窑岭大桥（修改后）",
-  "projectLocation": "浙江省温州市鹿城区"
-}
-```
-
-**Response：**
-
-```json
-{
-  "code": 200,
-  "message": "成功",
-  "data": {
-    "id": "a1b2c3d4-e5f6-7890-abcd-ef123456789001",
-    "projectName": "碗窑岭大桥（修改后）",
-    "projectNo": "PROJ-2026-001",
-    "projectLocation": "浙江省温州市鹿城区",
-    "projectManager": "张三",
-    "projectDesc": "桥梁基桩检测",
-    "createdAt": "2026-05-12 10:00:00",
-    "updatedAt": "2026-05-12 11:00:00"
-  }
-}
-```
-
-### 3.5 删除项目（软删除）
-
-```
-POST /api/v1/projects/{projectId}/delete
-```
-
-> 软删除，数据仍保留在数据库中，但不再出现在查询结果中。
-
-**Response：**
-
-```json
-{
-  "code": 200,
-  "message": "删除成功",
-  "data": {}
-}
-```
 
 ### 3.6 查询当前账号有处理权限的项目列表
 
@@ -755,7 +586,13 @@ POST /api/v1/piles/{pileId}/measurements
     "soundVelocity": 4.12,
     "amplitude": 130.5,
     "soundTime": 248.0,
-    "psd": 85.3
+    "psd": 85.3,
+    "rawWaveform": {
+      "samplingRate": 500.0,
+      "pointCount": 512,
+      "storageType": 1,
+      "rawPointsJson": "[0.12, -0.45, 1.2, -0.87, 0.33, ...]"
+    }
   },
   {
     "profile": "1-2",
@@ -776,6 +613,17 @@ POST /api/v1/piles/{pileId}/measurements
 | `amplitude` | double | 否 | 波幅（dB） |
 | `soundTime` | double | 否 | 声时（us） |
 | `psd` | double | 否 | PSD 值 |
+| `rawWaveform` | object | 否 | 原始波形矩阵（可选，有则写入） |
+
+**`rawWaveform` 子字段：**
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `samplingRate` | double | 否 | 500.0 | 采样频率（kHz） |
+| `pointCount` | int | 否 | 512 | 采样点数（如 512、1024） |
+| `storageType` | int | 否 | 1 | 存储模式：1=数据库内联 JSON, 2=外部文件 |
+| `rawPointsJson` | string | 否 | — | 模式1：波形数据 JSON 数组字符串 |
+| `filePath` | string | 否 | — | 模式2：外部 `.npy` / `.h5` 文件路径 |
 
 **Response（201）：**
 
@@ -791,7 +639,19 @@ POST /api/v1/piles/{pileId}/measurements
       "soundVelocity": 4.12,
       "amplitude": 130.5,
       "soundTime": 248.0,
-      "psd": 85.3
+      "psd": 85.3,
+      "hasWaveform": true
+    },
+    {
+      "id": "e5f6a7b8-c9d0-1234-efab-2345678901cd",
+      "pileInfoId": "b2c3d4e5-f6a7-8901-bcde-f123456789012",
+      "profile": "1-2",
+      "depth": 1.0,
+      "soundVelocity": 4.08,
+      "amplitude": 128.2,
+      "soundTime": 250.5,
+      "psd": 82.1,
+      "hasWaveform": false
     }
   ]
 }
@@ -831,7 +691,8 @@ POST /api/v1/piles/{pileId}/measurements/list
       "soundVelocity": 4.12,
       "amplitude": 130.5,
       "soundTime": 248.0,
-      "psd": 85.3
+      "psd": 85.3,
+      "hasWaveform": true
     }
   ]
 }
@@ -860,14 +721,76 @@ POST /api/v1/piles/{pileId}/measurements/{id}/update
 ```json
 {
   "soundVelocity": 4.2,
-  "amplitude": 132.0
+  "amplitude": 132.0,
+  "rawWaveform": {
+    "samplingRate": 500.0,
+    "pointCount": 1024,
+    "storageType": 1,
+    "rawPointsJson": "[0.15, -0.42, 1.18, ...]"
+  }
 }
 ```
+
+> `rawWaveform` 为可选字段。若传入则对该测点 upsert（更新或插入）波形矩阵数据。
 
 ### 6.5 删除单条测点数据
 
 ```
 POST /api/v1/piles/{pileId}/measurements/{id}/delete
+```
+
+### 6.6 查询原始波形矩阵
+
+> 获取单条测点记录的原始波形矩阵数据。**每条约 512–1024 个浮点采样值，按需调用**。
+
+```
+POST /api/v1/piles/{pileId}/measurements/{id}/waveform
+```
+
+**路径参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `pileId` | guid | 基桩 ID |
+| `id` | guid | 测点 ID（measurement_data_id） |
+
+**Response（200）：**
+
+```json
+{
+  "code": 200,
+  "data": {
+    "measurementDataId": "d4e5f6a7-b8c9-0123-defa-1234567890bc",
+    "pileInfoId": "b2c3d4e5-f6a7-8901-bcde-f123456789012",
+    "samplingRate": 500.0,
+    "pointCount": 512,
+    "storageType": 1,
+    "rawPointsJson": "[0.12, -0.45, 1.2, -0.87, 0.33, ...]",
+    "filePath": null,
+    "createdAt": "2026-06-03 10:00:00"
+  }
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `measurementDataId` | guid | 测点 ID |
+| `pileInfoId` | guid | 基桩 ID |
+| `samplingRate` | double | 采样频率（kHz） |
+| `pointCount` | int | 采样点数 |
+| `storageType` | int | 存储模式：1=内联 JSON, 2=外部文件 |
+| `rawPointsJson` | string/null | 模式1：波形数据 JSON 数组字符串 |
+| `filePath` | string/null | 模式2：外部文件路径 |
+| `createdAt` | string | 创建时间 |
+
+**无波形数据时（404）：**
+
+```json
+{
+  "code": 404,
+  "message": "该测点无原始波形矩阵数据",
+  "data": null
+}
 ```
 
 ---

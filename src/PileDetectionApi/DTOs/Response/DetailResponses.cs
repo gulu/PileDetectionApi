@@ -30,6 +30,22 @@ public class MeasurementResponse
     public double? Amplitude { get; set; }
     public double? SoundTime { get; set; }
     public double? Psd { get; set; }
+
+    /// <summary>是否包含原始波形矩阵数据</summary>
+    public bool HasWaveform { get; set; }
+}
+
+/// <summary>原始波形矩阵响应 DTO</summary>
+public class MeasurementWaveformResponse
+{
+    public Guid MeasurementDataId { get; set; }
+    public Guid PileInfoId { get; set; }
+    public double SamplingRate { get; set; }
+    public int PointCount { get; set; }
+    public int StorageType { get; set; }
+    public string? RawPointsJson { get; set; }
+    public string? FilePath { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public class PileReportResponse

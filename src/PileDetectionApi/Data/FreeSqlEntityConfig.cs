@@ -158,5 +158,18 @@ public static class FreeSqlEntityConfig
             eb.Property(p => p.NewData).HasColumnName("new_data");
             eb.Property(p => p.CreatedAt).HasColumnName("created_at");
         });
+
+        // ===== MeasurementRawWaveformEntity → measurement_raw_waveform =====
+        fsql.CodeFirst.Entity<MeasurementRawWaveformEntity>(eb =>
+        {
+            eb.Property(p => p.MeasurementDataId).HasColumnName("measurement_data_id");
+            eb.Property(p => p.PileInfoId).HasColumnName("pile_info_id");
+            eb.Property(p => p.SamplingRate).HasColumnName("sampling_rate");
+            eb.Property(p => p.PointCount).HasColumnName("point_count");
+            eb.Property(p => p.StorageType).HasColumnName("storage_type");
+            eb.Property(p => p.RawPointsJson).HasColumnName("raw_points_json");
+            eb.Property(p => p.FilePath).HasColumnName("file_path");
+            eb.Property(p => p.CreatedAt).HasColumnName("created_at");
+        });
     }
 }

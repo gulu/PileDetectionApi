@@ -31,10 +31,20 @@ public class MappingProfile : Profile
         CreateMap<ProfileStatEntity, ProfileStatResponse>();
 
         // Measurement
-        CreateMap<CreateMeasurementRequest, MeasurementDataEntity>();
+        CreateMap<CreateMeasurementRequest, MeasurementDataEntity>()
+            .ForMember(d => d.Id, opts => opts.Ignore())
+            .ForMember(d => d.PileInfoId, opts => opts.Ignore())
+            .ForMember(d => d.CreatedAt, opts => opts.Ignore())
+            .ForMember(d => d.UpdatedAt, opts => opts.Ignore())
+            .ForMember(d => d.ApiVersion, opts => opts.Ignore());
         CreateMap<UpdateMeasurementRequest, MeasurementDataEntity>()
             .ForAllMembers(opts => opts.Condition((_, _, srcMember) => srcMember != null));
-        CreateMap<MeasurementDataEntity, MeasurementResponse>();
+        CreateMap<MeasurementDataEntity, MeasurementResponse>()
+            .ForMember(d => d.HasWaveform, opts => opts.Ignore());
+
+        // MeasurementRawWaveform
+        CreateMap<MeasurementWaveformRequest, MeasurementRawWaveformEntity>();
+        CreateMap<MeasurementRawWaveformEntity, MeasurementWaveformResponse>();
 
         // PileReport
         CreateMap<CreatePileReportRequest, PileReportEntity>();

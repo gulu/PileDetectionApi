@@ -29,7 +29,8 @@ public class MeasurementServiceTests : IDisposable
 
         _fsql.CodeFirst.SyncStructure(
             typeof(ProjectInfoEntity), typeof(PileInfoEntity),
-            typeof(MeasurementDataEntity), typeof(MeasurementAuditLogEntity));
+            typeof(MeasurementDataEntity), typeof(MeasurementAuditLogEntity),
+            typeof(MeasurementRawWaveformEntity));
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
         _mapper = config.CreateMapper();
